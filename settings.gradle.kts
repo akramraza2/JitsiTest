@@ -29,3 +29,4 @@ dependencyResolutionManagement {
 rootProject.name = "JitsiTest"
 include(":app")
 include(":firebase-token-module")
+include(":remote-pdf-viewer")

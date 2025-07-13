@@ -56,9 +56,16 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation("org.jitsi.react:jitsi-meet-sdk:9.2.2") {
+    implementation("org.jitsi.react:jitsi-meet-sdk:11.0.0") {
         isTransitive = true
     }
 
+    api("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-orgjson:0.12.6") {
+        exclude(group = "org.json", module = "json") // provided by Android natively
+    }
+
     implementation(project(":firebase-token-module"))
+    implementation(project(":remote-pdf-viewer"))
 }

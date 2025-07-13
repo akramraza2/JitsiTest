@@ -1,14 +1,19 @@
 package com.akram.jitsitest
 
 import android.os.Bundle
-import android.os.StrictMode
 import android.util.Log
-import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.akram.firebase_token_module.AccessToken
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
+import org.jitsi.meet.sdk.JitsiMeet
+import org.jitsi.meet.sdk.JitsiMeetActivity
+import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
+import java.net.MalformedURLException
+import java.net.URL
+import java.util.Date
 
 
 class MainActivity : AppCompatActivity() {
@@ -22,50 +27,80 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
-        StrictMode.setThreadPolicy(policy)
+        /*        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+                StrictMode.setThreadPolicy(policy)
 
-//        lifecycleScope.launch(Dispatchers.IO) {
-        val accessToken = AccessToken.getAccessToken()
-        Log.d("Access Token: ", " $accessToken")
-        val textView = findViewById<TextView>(R.id.textView)
-        textView.text = accessToken
+        //        lifecycleScope.launch(Dispatchers.IO) {
+                val accessToken = AccessToken.getAccessToken()
+                Log.d("Access Token: ", " $accessToken")
+                val textView = findViewById<TextView>(R.id.textView)
+                textView.text = accessToken*/
 //        }
 
-        /*
-                // Somewhere early in your app.
-                val serverURL: URL
-                serverURL = try {
-                    // When using JaaS, replace "https://meet.jit.si" with the proper serverURL
-                    URL("https://meet.jit.si")
-                } catch (e: MalformedURLException) {
-                    e.printStackTrace()
-                    throw RuntimeException("Invalid server URL!")
-                }
-                val defaultOptions = JitsiMeetConferenceOptions.Builder()
-                    .setServerURL(serverURL) // When using JaaS, set the obtained JWT here
-                    //.setToken("MyJWT")
-                    // Different features flags can be set
-                    // .setFeatureFlag("toolbox.enabled", false)
-                    // .setFeatureFlag("filmstrip.enabled", false)
-                    .setFeatureFlag("welcomepage.enabled", false)
-                    .build()
-                JitsiMeet.setDefaultConferenceOptions(defaultOptions)
+        val jwtToken = generateJwtToken()
+        Log.d("JWT Token: ", " $jwtToken")
+        // Somewhere early in your app.
+        val serverURL: URL
+        serverURL = try {
+            // When using JaaS, replace "https://meet.jit.si" with the proper serverURL
+            URL("https://turn.alamaanois.com")
+        } catch (e: MalformedURLException) {
+            e.printStackTrace()
+            throw RuntimeException("Invalid server URL!")
+        }
+        val defaultOptions = JitsiMeetConferenceOptions.Builder()
+            .setServerURL(serverURL) // When using JaaS, set the obtained JWT here
+            .setToken(jwtToken)
+            // Different features flags can be set
+            // .setFeatureFlag("toolbox.enabled", false)
+            // .setFeatureFlag("filmstrip.enabled", false)
+            .setFeatureFlag("welcomepage.enabled", false)
+            .build()
+        JitsiMeet.setDefaultConferenceOptions(defaultOptions)
 
 
         // ...
         // Build options object for joining the conference. The SDK will merge the default
         // one we set earlier and this one when joining.
-                val options = JitsiMeetConferenceOptions.Builder()
-                    .setRoom("2025-morning-1-CLASS-1-MORNING-6193244") // Settings for audio and video
-                    .setAudioMuted(true)
-                    .setVideoMuted(true)
-                    .build()
+        val options = JitsiMeetConferenceOptions.Builder()
+            .setRoom("2025-morning-1-CLASS-1-MORNING-6193244") // Settings for audio and video
+            .setAudioMuted(true)
+            .setVideoMuted(true)
+//            .setToken(jwtToken)
+            .build()
 
 
         // Launch the new activity with the given options. The launch() method takes care
         // of creating the required Intent and passing the options.
-                JitsiMeetActivity.launch(this, options)
-*/
+        JitsiMeetActivity.launch(this, options)
+    }
+
+    private fun generateJwtToken(): String {
+        val key = Keys.hmacShaKeyFor("Al@Amaan+Online_IslamicStudiesAndroid".toByteArray())
+        val now = Date()
+        val expiry = Date(now.time + 5400000)
+
+        val userName = "Jitsi Test"
+
+        return Jwts.builder()
+            .header().add("typ", "JWT").and()
+            .claims()
+            .add("iss", "alamaan.ois")
+            .add("aud", "alamaan.ois")
+            .add("sub", "turn.alamaanois.com")
+            .add("room", "*")
+            .add(
+                "context", mapOf(
+                    "user" to mapOf(
+                        "name" to userName,
+                        "moderator" to true
+                    )
+                )
+            )
+            .and()
+            .issuedAt(now)
+            .expiration(expiry)
+            .signWith(key, Jwts.SIG.HS256)
+            .compact()
     }
 }
