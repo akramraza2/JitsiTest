@@ -14,11 +14,19 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+//        maven{
+//            url = uri("file:///C:/jitsi-repo/alamaanlatest")
+//        }
+//        mavenLocal()
+        maven {
+            url = uri("https://akramraza2.github.io/jitsi-meet-customised/jitsi-maven-repository/alamaan-custom-sdk")
+        }
+
         google()
         mavenCentral()
-        maven {
-            url = uri("https://github.com/jitsi/jitsi-maven-repository/raw/master/releases")
-        }
+//        maven {
+//            url = uri("https://github.com/jitsi/jitsi-maven-repository/raw/master/releases")
+//        }
         maven {
             url = uri("https://maven.google.com")
         }

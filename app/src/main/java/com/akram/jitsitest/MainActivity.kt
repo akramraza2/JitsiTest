@@ -3,6 +3,7 @@ package com.akram.jitsitest
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -12,11 +13,13 @@ import org.jitsi.meet.sdk.JitsiMeet
 import org.jitsi.meet.sdk.JitsiMeetActivity
 import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
 import java.net.MalformedURLException
+import java.net.URI
 import java.net.URL
 import java.util.Date
 
 
 class MainActivity : AppCompatActivity() {
+    private val jitsiUrl = "https://turn.alamaanois.com"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -37,13 +40,35 @@ class MainActivity : AppCompatActivity() {
                 textView.text = accessToken*/
 //        }
 
-        val jwtToken = generateJwtToken()
+        showDialog()
+
+
+    }
+
+    private fun showDialog() {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder
+            .setMessage("Choose a user!")
+            .setTitle("User")
+            .setPositiveButton("Moderator") { dialog, _ ->
+                dialog.dismiss()
+                startMeeting(true, "Moderator")
+            }
+            .setNegativeButton("Participant") { dialog, _ ->
+                dialog.dismiss()
+                startMeeting(false, "Participant")
+            }
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
+    }
+
+    private fun startMeeting(isModerator: Boolean, name: String) {
+        val jwtToken = generateJwtToken(isModerator, name)
         Log.d("JWT Token: ", " $jwtToken")
         // Somewhere early in your app.
-        val serverURL: URL
-        serverURL = try {
+        val serverURL: URL = try {
             // When using JaaS, replace "https://meet.jit.si" with the proper serverURL
-            URL("https://turn.alamaanois.com")
+            URL(jitsiUrl)
         } catch (e: MalformedURLException) {
             e.printStackTrace()
             throw RuntimeException("Invalid server URL!")
@@ -63,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         // Build options object for joining the conference. The SDK will merge the default
         // one we set earlier and this one when joining.
         val options = JitsiMeetConferenceOptions.Builder()
-            .setRoom("2025-morning-1-CLASS-1-MORNING-6193244") // Settings for audio and video
+            .setRoom("2025-morning-1-CLASS-1-MORNING-193289") // Settings for audio and video
             .setAudioMuted(true)
             .setVideoMuted(true)
 //            .setToken(jwtToken)
@@ -75,32 +100,77 @@ class MainActivity : AppCompatActivity() {
         JitsiMeetActivity.launch(this, options)
     }
 
-    private fun generateJwtToken(): String {
+    private fun generateJwtToken(isModerator: Boolean, name: String): String {
         val key = Keys.hmacShaKeyFor("Al@Amaan+Online_IslamicStudiesAndroid".toByteArray())
         val now = Date()
         val expiry = Date(now.time + 5400000)
-
-        val userName = "Jitsi Test"
 
         return Jwts.builder()
             .header().add("typ", "JWT").and()
             .claims()
             .add("iss", "alamaan.ois")
             .add("aud", "alamaan.ois")
-            .add("sub", "turn.alamaanois.com")
+            .add("sub", extractSub(jitsiUrl))
             .add("room", "*")
             .add(
                 "context", mapOf(
                     "user" to mapOf(
-                        "name" to userName,
-                        "moderator" to true
+                        "name" to name,
+//                        "affiliation" to "owner",
+                        "moderator" to isModerator
+                    ),
+                    "features" to mapOf(
+                        "recording" to true,
+                        "screen-sharing" to true,
+                        "file-upload" to true
                     )
                 )
             )
             .and()
             .issuedAt(now)
+
             .expiration(expiry)
             .signWith(key, Jwts.SIG.HS256)
             .compact()
+    }
+    /*
+        private fun generateJwtToken(): String {
+            val key = Keys.hmacShaKeyFor(
+                "Al@Amaan+Online_IslamicStudiesAndroid".toByteArray()
+            )
+
+            val now = Date()
+            val expiry = Date(now.time + 5400000)
+
+            return Jwts.builder()
+                .header().add("typ", "JWT").and()
+                .claim("iss", "alamaan.ois")
+                .claim("aud", "alamaan.ois")
+                .claim("sub", "meet.alamaanois.com")
+                .claim("room", "*")
+
+                .claim("moderator", true)
+                .claim("affiliation", "owner")
+
+                // Optional UI context
+                .claim(
+                    "context", mapOf(
+                        "user" to mapOf(
+                            "name" to "OJgiodsng NKNGiode"
+                        ),
+                        "features" to mapOf(
+                            "recording" to true,
+                            "screen-sharing" to false
+                        )
+                    )
+                )
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(key, Jwts.SIG.HS256)
+                .compact()
+        }*/
+
+    private fun extractSub(myUrl: String): String {
+        return URI(myUrl).host
     }
 }
